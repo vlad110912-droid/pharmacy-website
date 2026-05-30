@@ -99,6 +99,11 @@ INSERT INTO users (login, password_hash, role)
 VALUES ('admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin')
 ON CONFLICT (login) DO NOTHING;
 
+-- Default guest user for anonymous orders
+INSERT INTO users (login, password_hash, role)
+VALUES ('guest', 'guest-placeholder', 'visitor')
+ON CONFLICT (login) DO NOTHING;
+
 -- Default dictionary data for admin selects
 INSERT INTO categories (name)
 SELECT v.name

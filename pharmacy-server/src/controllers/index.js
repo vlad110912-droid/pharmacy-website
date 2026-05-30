@@ -170,7 +170,7 @@ const dictController = {
 const orderController = {
   async create(req, res, next) {
     try {
-      const userId = req.user ? req.user.id : null;
+      const userId = req.user ? req.user.id : (await userRepo.getOrCreateGuestUser()).id;
       const created = await orderService.createOrder(userId, req.body);
       res.status(201).json(created);
     } catch (e) { next(e); }

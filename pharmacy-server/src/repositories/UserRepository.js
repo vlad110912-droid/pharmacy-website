@@ -23,6 +23,18 @@ class UserRepository {
     return rows[0];
   }
 
+  async getOrCreateGuestUser() {
+    const guestLogin = 'guest';
+    const { rows } = await pool.query(
+      `INSERT INTO users (login, password_hash, role)
+       VALUES ($1, $2, 'visitor')
+       ON CONFLICT (login) DO UPDATE SET login = users.login
+       RETURNING id`,
+      [guestLogin, 'guest-placeholder']
+    );
+    return rows[0];
+  }
+
   async findAll() {
     const { rows } = await pool.query(
       'SELECT id, login, role, created_at FROM users ORDER BY login'
