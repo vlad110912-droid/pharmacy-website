@@ -1,0 +1,39 @@
+config:
+  target: "http://localhost:3001"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 50
+      rampTo: 200
+      name: "Ramp up"
+    - duration: 60
+      arrivalRate: 200
+      name: "Peak load"
+  plugins:
+    metrics-by-endpoint: {}
+
+scenarios:
+  - name: "Browse catalog"
+    weight: 60
+    flow:
+      - get:
+          url: "/api/products"
+
+  - name: "Get product details"
+    weight: 30
+    flow:
+      - get:
+          url: "/api/products/1"
+
+  - name: "Get summary report"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/reports/summary"
+          headers:
+            Authorization: "Bearer {{ $env.ADMIN_TOKEN }}"
+          qs:
+            dateFrom: "2026-01-01"
+            dateTo: "2026-12-31"

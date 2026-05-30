@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB:       pharmacy
+      POSTGRES_USER:     pharmacy_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pharmacy_pass}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./pharmacy-server/db/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pharmacy_user -d pharmacy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./pharmacy-server
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST:     db
+      DB_PORT:     5432
+      DB_NAME:     pharmacy
+      DB_USER:     pharmacy_user
+      DB_PASSWORD: ${DB_PASSWORD:-pharmacy_pass}
+      JWT_SECRET:  ${JWT_SECRET:-change_me_in_production}
+      PORT:        3001
+    ports:
+      - "3001:3001"
+
+  client:
+    build:
+      context: ./pharmacy-client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+
+volumes:
+  pgdata:
