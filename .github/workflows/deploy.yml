@@ -1,5 +1,8 @@
 name: CI/CD Pipeline
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches: [main]
@@ -7,7 +10,6 @@ on:
     branches: [main]
 
 jobs:
-  # ── 1. Run unit tests ────────────────────────────────────────────────────────
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -28,7 +30,6 @@ jobs:
         working-directory: pharmacy-server
         run: npm run test:unit
 
-  # ── 2. Build & push Docker images ────────────────────────────────────────────
   build-and-push:
     name: Build & Push Docker Images
     needs: test
@@ -58,22 +59,23 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-client:latest
           build-args: VITE_API_URL=${{ secrets.PROD_API_URL }}
 
-  # ── 3. Deploy via SSH ─────────────────────────────────────────────────────────
   deploy:
-    name: Deploy to Production
+    name: Deploy to Railway
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host:     ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key:      ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /opt/pharmacy
-            docker-compose pull
-            docker-compose up -d --remove-orphans
-            docker system prune -f
-            echo "Deployed at $(date)"
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy backend to Railway
+        run: railway up --service server --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Deploy frontend to Railway
+        run: railway up --service client --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
