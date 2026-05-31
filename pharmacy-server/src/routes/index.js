@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { authenticate, requireRole } = require('../middleware/auth');
+const { authenticate, optionalAuthenticate, requireRole } = require('../middleware/auth');
 const { body } = require('express-validator');
 const {
   productController, saleController, supplyController,
@@ -59,7 +59,7 @@ router.put('/suppliers/:id',    authenticate, requireRole('admin'), dictControll
 router.delete('/suppliers/:id', authenticate, requireRole('admin'), dictController.deleteSupplier);
 
 // ── Orders & Cart ───────────────────────────────────────────────────────────
-router.post('/orders',            orderController.create);
+router.post('/orders',            optionalAuthenticate, orderController.create);
 router.get('/orders/my',          authenticate, orderController.getMyOrders);
 router.get('/orders/:id',         orderController.getById);
 router.get('/orders',             authenticate, requireRole('admin','seller'), orderController.getAll);
